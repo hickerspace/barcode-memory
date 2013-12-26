@@ -1,0 +1,12 @@
+[preset_barcodes]
+reset:
+print:
+
+[memory]
+memoryfile:data/memory.sample
+imagedir:images/
+highscorefile:
+
+[printer]
+port:/dev/ttyUSB0
+baudrate:19200
