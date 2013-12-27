@@ -67,6 +67,8 @@ class Memory(object):
 
         self.barcodes = []
         self.barcodepairs = {}
+        # reset in case RESET got scanned during move
+        self.temp_barcode = None
 
         # load barcodes
         with open(self.memoryfile) as f:

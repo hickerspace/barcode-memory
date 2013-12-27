@@ -7,7 +7,7 @@ import os, threading, logging
 from memory import Memory
 import time
 
-DEBUG = False
+DEBUG = True
 
 class MemoryDisplay(threading.Thread):
 	"Displays timer and memory images. Handles barcode input (barcode scanner is a HID)."
@@ -92,9 +92,10 @@ class MemoryDisplay(threading.Thread):
 		if firstMove:
 			self.lastImg = img
 		else:
-			secondary = pygame.image.load(self.lastImg).convert()
-			secondary = self.scalePercentage(secondary, 0.25)
-			self.screen.blit(secondary, (self.screen.get_rect().width-secondary.get_rect().width, 25))
+			pass
+			#secondary = pygame.image.load(self.lastImg).convert()
+			#secondary = self.scalePercentage(secondary, 0.25)
+			#self.screen.blit(secondary, (self.screen.get_rect().width-secondary.get_rect().width, 25))
 
 		pygame.display.update()
 
