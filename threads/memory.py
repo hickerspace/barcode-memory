@@ -125,6 +125,7 @@ class Memory(object):
                 self.display.showImg(self.barcodeimages[barcodeinput], firstMove)
 
                 if firstMove: # first scanned barcode
+                    logging.info("first move")
                     self.temp_barcode = barcodeinput
 
                 else: # second scanned barcode
@@ -162,9 +163,8 @@ class Memory(object):
         for i in self.barcodes:
             self.printer.write("\x1d\x6b\x02%s\00" % i)
             self.printer.write("\n\n\n\n")
-
-        # cut & go
-        self.printer.write("\x1b\x4A\x9C\x1b\x69")
+            # cut & go
+            self.printer.write("\x1b\x4A\x9C\x1b\x69")
 
     def loadHighscore(self):
         highscores_str = [] # list of string highscores
