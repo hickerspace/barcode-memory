@@ -13,7 +13,7 @@ class MemoryDisplay(threading.Thread):
 	"Displays timer and memory images. Handles barcode input (barcode scanner is a HID)."
 
 	# taken from http://learn.adafruit.com/pi-video-output-using-pygame/pygame-drawing-functions
-	def __init__(self, ledstrip):
+	def __init__(self, ledstrip, noReturn=False):
 		"Ininitializes a new pygame screen using the framebuffer"
 		threading.Thread.__init__(self)
 
@@ -55,6 +55,7 @@ class MemoryDisplay(threading.Thread):
 		self.playTime = 0
 		# TODO: increase this to ~ 10 min (= 600)
 		self.maxPlayTime = 600
+		self.noReturn = noReturn
 		self.barcode = ""
 		self.runGame = True
 		self.inGame = False
@@ -92,10 +93,10 @@ class MemoryDisplay(threading.Thread):
 		if firstMove:
 			self.lastImg = img
 		else:
-			pass
-			#secondary = pygame.image.load(self.lastImg).convert()
-			#secondary = self.scalePercentage(secondary, 0.25)
-			#self.screen.blit(secondary, (self.screen.get_rect().width-secondary.get_rect().width, 25))
+			#pass
+			secondary = pygame.image.load(self.lastImg).convert()
+			secondary = self.scalePercentage(secondary, 0.25)
+			self.screen.blit(secondary, (self.screen.get_rect().width-secondary.get_rect().width, 25))
 
 		pygame.display.update()
 
@@ -131,6 +132,12 @@ class MemoryDisplay(threading.Thread):
 					self.close()
 				elif event.key <= 127:
 					self.barcode += chr(event.key)
+					# if barcode scanner does not send return after barcode
+					defaultLength = len(self.memory.barcodes[0])
+					if self.noReturn and len(self.barcode) == defaultLength:
+						returnEvent = pygame.event.Event(pygame.KEYDOWN,
+							key=pygame.K_RETURN)
+						pygame.event.post(returnEvent)
 
 	def close(self):
 		self.runGame = False

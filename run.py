@@ -14,7 +14,7 @@ def main():
 	# create LED strip
 	ledstrip = LedStrip()
 	# create display
-	display = MemoryDisplay(ledstrip)
+	display = MemoryDisplay(ledstrip, noReturn=True)
 
 	# start them
 	ledstrip.start()
