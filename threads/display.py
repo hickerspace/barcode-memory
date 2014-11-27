@@ -133,7 +133,7 @@ class MemoryDisplay(threading.Thread):
 				elif event.key <= 127:
 					self.barcode += chr(event.key)
 					# if barcode scanner does not send return after barcode
-					defaultLength = len(self.memory.barcodes[0])
+					defaultLength = len(self.memory.preset_barcodes.keys()[0])
 					if self.noReturn and len(self.barcode) == defaultLength:
 						returnEvent = pygame.event.Event(pygame.KEYDOWN,
 							key=pygame.K_RETURN)
