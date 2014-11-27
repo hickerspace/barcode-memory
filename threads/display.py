@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import pygame, pygame.event, pygame.mouse
-from datetime import timedelta
+from datetime import timedelta, datetime
 import os, threading, logging
 from memory import Memory
 import time
@@ -53,12 +53,12 @@ class MemoryDisplay(threading.Thread):
 
 		self.clock = pygame.time.Clock()
 		self.playTime = 0
-		# TODO: increase this to ~ 10 min (= 600)
-		self.maxPlayTime = 600
 		self.noReturn = noReturn
 		self.barcode = ""
 		self.runGame = True
 		self.inGame = False
+		self.lastAction = datetime.now() - timedelta(seconds=30)
+		self.validGame = True
 		self.lastImg = None
 
 		self.ledstrip = ledstrip
@@ -103,6 +103,7 @@ class MemoryDisplay(threading.Thread):
 	def newGame(self):
 		"Resets the timer and clears the screen."
 		self.inGame = True
+		self.validGame = True
 		self.playTime = 0
 		# clear incomplete barcodes
 		self.barcode = ""
@@ -113,8 +114,9 @@ class MemoryDisplay(threading.Thread):
 		instruction = font.render("Start scanning!", True, (255, 255, 255), (0, 0, 0))
 		self.blitCenterX(instruction, 100)
 
-	def endGame(self):
+	def endGame(self, valid=True):
 		self.inGame = False
+		self.validGame = valid
 
 	def handleKey(self):
 		"Handles keyboard input: barcodes, RETURN and ESCAPE"
@@ -126,6 +128,7 @@ class MemoryDisplay(threading.Thread):
 					logging.info("Barcode %s received." % self.barcode)
 					self.memory.scan(self.barcode)
 					self.barcode = ""
+					self.lastAction = datetime.now()
 				elif event.key == pygame.K_ESCAPE:
 					# exit
 					logging.info("Exitting.. (Escape pressed)")
@@ -133,7 +136,7 @@ class MemoryDisplay(threading.Thread):
 				elif event.key <= 127:
 					self.barcode += chr(event.key)
 					# if barcode scanner does not send return after barcode
-					defaultLength = len(self.memory.barcodes[0])
+					defaultLength = len(self.memory.preset_barcodes.keys()[0])
 					if self.noReturn and len(self.barcode) == defaultLength:
 						returnEvent = pygame.event.Event(pygame.KEYDOWN,
 							key=pygame.K_RETURN)
@@ -166,7 +169,7 @@ class MemoryDisplay(threading.Thread):
 
 		font = pygame.font.Font(None, 35)
 
-		if self.playTime > 0 and self.playTime <= self.maxPlayTime:
+		if self.playTime > 0 and self.validGame:
 		 	time_ = str(timedelta(seconds=self.playTime))[2:]
 			personal = font.render("Congratulations, your score: %s" % time_, True, red, black)
 			self.blitCenterX(personal, 45)
@@ -189,8 +192,10 @@ class MemoryDisplay(threading.Thread):
 		font = pygame.font.Font(None, 40)
 		count = 0
 		while self.runGame:
-			if self.playTime > self.maxPlayTime:
-				self.endGame()
+			# stop after 30 seconds of inactivity
+			if self.inGame and self.lastAction < datetime.now() - timedelta(seconds=30):
+				logging.info("Returned to menu due to 30 seconds of inactivity.")
+				self.endGame(False)
 
 			if self.inGame:
 				# show timer
