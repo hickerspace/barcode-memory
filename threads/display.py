@@ -54,15 +54,31 @@ class MemoryDisplay(threading.Thread):
 		self.clock = pygame.time.Clock()
 		self.playTime = 0
 		self.noReturn = noReturn
-		self.barcode = ""
 		self.runGame = True
 		self.inGame = False
 		self.lastAction = datetime.now() - timedelta(seconds=30)
 		self.validGame = True
+		self.lastHighscore = []
+		self.barcode = ""
 		self.lastImg = None
+
+		self.white = (255, 255, 255)
+		self.black = (0, 0, 0)
+		self.red = (255, 0, 0)
+		self.green = (0, 255, 0)
 
 		self.ledstrip = ledstrip
 		self.memory = Memory(self)
+
+		# preload images
+		gameImgs = ["byhickerspace.png", "qrcode.png"]
+		self.preloadedImgs = {}
+		for imgPath in gameImgs:
+			self.preloadedImgs[imgPath] = pygame.image.load(imgPath).convert()
+
+		for imgPath in self.memory.images:
+			img = pygame.image.load(imgPath).convert()
+			self.preloadedImgs[imgPath] = self.scalePercentage(img, 1)
 
 		# Clear the screen to start
 		self.screen.fill((0, 0, 0))
@@ -72,6 +88,8 @@ class MemoryDisplay(threading.Thread):
 		pygame.mouse.set_visible(False)
 		# Render the screen
 		pygame.display.update()
+
+		self.endGame()
 
 	def __del__(self):
 		"Destructor to make sure pygame shuts down, etc."
@@ -86,14 +104,11 @@ class MemoryDisplay(threading.Thread):
 		"Takes image path and displays the image."
 		if not self.inGame: return
 		self.screen.fill((0, 0, 0))
-		mainImg = pygame.image.load(img).convert()
-		mainImg = self.scalePercentage(mainImg, 1)
-		self.screen.blit(mainImg, (0, 25))
+		self.screen.blit(self.preloadedImgs[img], (0, 25))
 
 		if firstMove:
 			self.lastImg = img
 		else:
-			#pass
 			secondary = pygame.image.load(self.lastImg).convert()
 			secondary = self.scalePercentage(secondary, 0.25)
 			self.screen.blit(secondary, (self.screen.get_rect().width-secondary.get_rect().width, 25))
@@ -113,6 +128,8 @@ class MemoryDisplay(threading.Thread):
 		font = pygame.font.Font(None, 35)
 		instruction = font.render("Start scanning!", True, (255, 255, 255), (0, 0, 0))
 		self.blitCenterX(instruction, 100)
+
+		pygame.display.update()
 
 	def endGame(self, valid=True):
 		self.inGame = False
@@ -153,37 +170,34 @@ class MemoryDisplay(threading.Thread):
 		pos.y = y
 		self.screen.blit(surface, pos)
 
-	def highscore(self, blink):
+	def highscore(self):
 
 		self.ledstrip.animation(self.memory.barcodepositions.values())
 
-		white = (255, 255, 255)
-		black = (0, 0, 0)
-		red = (255, 0, 0)
-		green = (0, 255, 0)
 		# clear screen
-		self.screen.fill(black)
-		titleFont = pygame.font.Font(None, 60)
-		titleSurface = titleFont.render("Barcode Memory", True, white, black)
-		self.blitCenterX(titleSurface, 0)
+		self.screen.fill(self.black)
+		#titleFont = pygame.font.Font(None, 60)
+		#titleSurface = titleFont.render("Barcode Memory", True, white, black)
+		#self.blitCenterX(titleSurface, 160)
 
-		font = pygame.font.Font(None, 35)
+		font = pygame.font.Font(None, 32)
 
 		if self.playTime > 0 and self.validGame:
 		 	time_ = str(timedelta(seconds=self.playTime))[2:]
-			personal = font.render("Congratulations, your score: %s" % time_, True, red, black)
-			self.blitCenterX(personal, 45)
+			personal = font.render("Congratulations, your score: %s" % time_, True, self.red, self.black)
+			self.blitCenterX(personal, 185)
 
-		pos = 80
-		for score in self.memory.loadHighscore()[:5]:
+		pos = 230
+		rank = 1
+		for score in self.memory.loadHighscore()[:8]:
 			delta, playTime = score
-			scoreline = font.render("%s      %s" % (str(delta)[2:], playTime.strftime("%Y-%m-%d %H:%M")), True, white, black)
+			scoreline = font.render("#%d      %s      %s" % (rank, str(delta)[2:], playTime.strftime("%Y-%m-%d %H:%M")), True, self.white, self.black)
 			self.blitCenterX(scoreline, pos)
 			pos += 25
+			rank += 1
 
-		if not blink:
-			normal = font.render("Scan START to play!", True, green, black)
-			self.blitCenterX(normal, 210)
+		self.blitCenterX(self.preloadedImgs["byhickerspace.png"], 0)
+		self.blitCenterX(self.preloadedImgs["qrcode.png"], 600)
 
 		pygame.display.update()
 
@@ -204,17 +218,23 @@ class MemoryDisplay(threading.Thread):
 
 				# blit text
 				self.screen.blit(timerSurface, (0, 0))
+				pygame.display.update()
 
 				if count % 10 == 0:
 					self.playTime += 1
 			else:
-				self.highscore(count < 3)
+				if count == 3:
+					self.blitCenterX(font.render("Scan NEW GAME to play!", True, self.green, self.black), 440)
+					# update display
+					pygame.display.update()
+				elif count == 10:
+					self.blitCenterX(font.render("Scan NEW GAME to play!", True, self.black, self.black), 440)
+					# update display
+					pygame.display.update()
 
 			if count % 10 == 0:
 				count = 0
 
-			# update display
-			pygame.display.update()
 			self.handleKey()
 			# 10 fps
 			self.clock.tick(10)

@@ -25,7 +25,7 @@ class LedStrip(threading.Thread):
 
 	def serialInit(self, wait=True):
 		try:
-			self.ser = serial.Serial('/dev/ttyACM1', 9600)
+			self.ser = serial.Serial('/dev/ttyACM0', 9600)
 			self.stopThread = False
 			# the arduino seems to take quite long to be ready, so sleep
 			if wait:
@@ -62,6 +62,7 @@ class LedStrip(threading.Thread):
 		logging.info("LED strip thread closed.")
 
 	def close(self):
+		logging.info("Closing LED thread")
 		self.stopThread = True
 		if self.ser:
 			self.ser.close()
@@ -72,6 +73,7 @@ class LedStrip(threading.Thread):
 
 	def sendColor(self, ledNo, r, g, b):
 		"Takes a serial connection and sets a color to LED."
+		logging.info("Got (%s, %s, %s) for led #%d" % (r, g, b, ledNo))
 		self.animate = False
 		if not -1 < ledNo < 50:
 			logging.error("LED number not in range.")
@@ -81,8 +83,10 @@ class LedStrip(threading.Thread):
 			self.q.put(LedData(ledNo, r, g, b))
 
 	def animation(self, leds):
-		self.leds = sorted(leds)
-		self.animate = True
+		if not self.animate:
+			logging.info("LED strip animation started.")
+			self.leds = sorted(leds)
+			self.animate = True
 
 	# some predefined color setters
 	def sendYellow(self, ledNo):
